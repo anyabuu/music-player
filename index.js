@@ -1,88 +1,89 @@
 import {calcTime} from "./js/utils.js";
+import {playSong} from './js/player.js';
 
-const timelineAll = document.querySelector('.timeline__all');
-const playButton = document.querySelector('.player__btn');
-const muteButton = document.querySelector('.sound__btn');
-const audio = document.querySelector('audio');
-const timelineCurrent = document.querySelector('.timeline__current');
-const soundInput = document.querySelector('.sound__input');
-const rangeTimeline = document.querySelector('.range-timeline');
-const player = document.querySelector('.player');
+const songs = [
+    {
+        url: 'audio/CtrlAltDelete.mp3',
+        cover: 'https://lh3.googleusercontent.com/6qPkFhjiVXQtyHCYv3q8fY2v9ZYK2mzgOssvAOyZqrp9tfx6wnRxpKmOnrG36syuRVdaKCNGV02uXbY=w60-h60-l90-rj',
+        name: 'CtrlAltDelete',
+        artist: 'Bones',
+        album: 'UNRENDERED',
+        year: '2017',
+    },
+    {
+        url: 'audio/star_shopping.mp3',
+        cover: 'https://lh3.googleusercontent.com/ngAFtvoQiPcj7bIts6WC9slvou7lzUYRyoGXHjfE0ZF8UIp9GCY1sgXPjQb_xo18asOFhqwb__bYRrTytQ=w60-h60-l90-rj',
+        name: 'Star Shopping',
+        artist: 'Lil Peep',
+        album: 'Star shopping',
+        year: '2017',
+    },
+    {
+        url: 'audio/liverpool_street.mp3',
+        cover: 'https://lh3.googleusercontent.com/19y8nbouGDVk9Sg2SMGPdXItwY0OLHsE59egweO4FlHjtHGrhxgri2XVoOl7Bp4L0ZA9QjLMV6HyYBTR=w60-h60-l90-rj',
+        name: 'Liverpool Street In The Rain',
+        artist: 'Mall Grab',
+        album: 'How The Dogs Chill, Vol.1',
+        year: '2018',
+    },
+    {
+        url: 'audio/bones_xavier-wulf.mp3',
+        cover: 'https://lh3.googleusercontent.com/JcFZ40cGvHICV748gpof7NO9nEuiG-imWQC45A1ozbL7q87ySLMKwuBsMyq7NiE53Qtk5w_KCAVH6RBFRA=w60-h60-l90-rj',
+        name: 'Cemetery Blunts',
+        artist: 'Xavier Wulf & Bones',
+        album: 'Lame',
+        year: '2013',
+    },
+    {
+        url: 'audio/black_siemens.mp3',
+        cover: 'https://lh3.googleusercontent.com/KftDgajIuHTMxe2fBa_mBfQEvlbRTb561i7klH3rVyztDMfow5pGAhcrr2P24w1GVKICuaKzC6CK3JWp4w=w60-h60-l90-rj',
+        name: 'Black Siemens',
+        artist: 'Pharaoh',
+        album: 'Black Siemens',
+        year: '2015',
+    },
+];
 
-
-let playState = 'paused'; //флажок, изначально песня на паузе
-let muteState = 'full';
-let soundInputLastValue = soundInput.value;
-let ref = null;
-
-
-
-function runWhenLoaded() { /* read duration etc, this = audio element */ }
-
-if (!audio.readyState) {
-    audio.addEventListener("loadedmetadata", runWhenLoaded);
-} else {
-    runWhenLoaded.call(audio);
-    timelineAll.innerText = calcTime(audio.duration);
-}
-
-// audio.addEventListener('loadedmetadata', async() => {
-//    timelineAll.innerText = calcTime(audio.duration);
-// });
-
-audio.addEventListener('progress', () => {
-    console.log(audio.currentTime);
-});
-
-const whilePlaying = () => {
-    const {currentTime, duration} = audio;
-    const percentOfTrack = (currentTime * 100) / duration;
-    timelineCurrent.innerText = calcTime(currentTime);
-    rangeTimeline.value = percentOfTrack;
-    player.style.setProperty('--seek-before-width', `${percentOfTrack}%`);
-    timelineAll.innerText = calcTime(duration);
-
-    ref = requestAnimationFrame(whilePlaying);
-}
-
-playButton.addEventListener('click', async() => {
-    if (playState === 'paused') {
-        await audio.play();
-        requestAnimationFrame(whilePlaying);
-        playButton.classList.add('player__btn--paused');
-
-        playState = 'played';
-    } else if (playState === 'played') {
-        await audio.pause();
-        cancelAnimationFrame(whilePlaying);
-        playButton.classList.remove('player__btn--paused');
-
-        playState = 'paused';
+const list = document.querySelector('.list');
+songs.forEach((song, index, songs) => {
+    if(index === 0) {
+        playSong(song.url, index, songs, song);
+        song.isPlayed = true;
     }
 
+    renderSong(song, index, songs);
 });
 
-soundInput.value = 100;
+function renderSong (song, index, songs) {
+  const item = document.createElement('li');
+  item.classList.add('list__item');
+  song.item = item;
 
-soundInput.addEventListener('input', (event) => {
-    const {value} = event.target;
+  item.addEventListener('click', async(event) => {
+      await playSong(song.url, index, songs, song, true);
+      clearPlayState();
+      item.isPlayed = true;
 
-    soundInputLastValue = value;
-    audio.volume = value / 100;
-})
+      if(item.isPlayed) {
+          item.classList.add('list__item--active');
+      }
+  });
 
-muteButton.addEventListener('click', () => {
-    if(muteState === 'full'){
-        audio.volume = 0;
-        soundInput.value = 0;
-        muteState = 'muted';
-        muteButton.classList.add('sound__btn--mute');
-    } else if(muteState === 'muted') {
-        audio.volume = soundInputLastValue / 100;
-        soundInput.value = soundInputLastValue;
-        muteState = 'full';
-        muteButton.classList.remove('sound__btn--mute')
-    }
+  if(song.isPlayed) {
+      item.classList.add('list__item--active');
+  }
+  const image = document.createElement('img');
+  const text = document.createElement('p');
+  image.src = song.cover;
+  text.innerText = `${song.name} - ${song.artist}`;
 
+  item.append(image, text);
+  list.append(item);
+}
 
-});
+function clearPlayState() {
+    songs.forEach(song => {
+        song.isPlayed = false;
+        song?.item.classList.remove('list__item--active');
+    })
+}
